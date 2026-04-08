@@ -1125,6 +1125,18 @@
             document.getElementById('app').style.display = 'flex';
             setupInteraction();
             drawMinimap();
+
+            // Focus view on early technologies (first few columns)
+            setTimeout(() => {
+              const wrap = document.getElementById('canvas-wrap');
+              const rect = wrap.getBoundingClientRect();
+              // Zoom in to show early tech tree nodes centered
+              transform.scale = 1.2;
+              transform.x = rect.width / 2 - 200;
+              transform.y = rect.height / 2 - 150;
+              applyTransform();
+              drawMinimap();
+            }, 100);
           }, 300);
         }, 100);
       }, 100);
