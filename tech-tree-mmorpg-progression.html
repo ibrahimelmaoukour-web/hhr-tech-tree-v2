@@ -1,0 +1,1628 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Human Tech Tree — Progression Mode</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box
+    }
+
+    :root {
+      --bg: #0a0a12;
+      --bg2: #12121f;
+      --bg3: #1a1a2e;
+      --panel: #0d0d1a;
+      --panel2: #141428;
+      --border: #2a2a4a;
+      --border2: #3a3a5a;
+      --text: #e8e8ff;
+      --text2: #9090b8;
+      --text3: #5a5a7a;
+      --gold: #ffd700;
+      --gold2: #ffaa00;
+      --gold3: #ff8800;
+      --blue: #4488ff;
+      --blue2: #2266dd;
+      --green: #44ff88;
+      --green2: #22aa55;
+      --purple: #aa44ff;
+      --purple2: #7722cc;
+      --red: #ff4444;
+      --red2: #cc2222;
+      --glow-gold: 0 0 8px #ffd70088, 0 0 20px #ffd70044;
+      --glow-blue: 0 0 8px #4488ff88, 0 0 20px #4488ff44;
+      --glow-green: 0 0 8px #44ff8888, 0 0 20px #44ff8844;
+      --glow-available: 0 0 12px #ffd700aa, 0 0 30px #ffd70066, 0 0 50px #ffd70033;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+      height: 100vh
+    }
+
+    #stars {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+      z-index: 1
+    }
+
+    #header {
+      background: linear-gradient(180deg, var(--bg2) 0%, var(--bg)aa 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      backdrop-filter: blur(8px);
+    }
+
+    #header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--gold);
+      text-shadow: var(--glow-gold);
+      letter-spacing: 2px;
+      text-transform: uppercase
+    }
+
+    #header p {
+      font-size: 11px;
+      color: var(--text2);
+      font-family: monospace
+    }
+
+    .header-spacer {
+      flex: 1
+    }
+
+    #search-wrap {
+      position: relative
+    }
+
+    #search {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 6px 12px 6px 28px;
+      font-size: 12px;
+      border-radius: 4px;
+      width: 200px;
+      outline: none;
+    }
+
+    #search:focus {
+      border-color: var(--blue);
+      box-shadow: var(--glow-blue)
+    }
+
+    #search-icon {
+      position: absolute;
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
+      font-size: 13px;
+      pointer-events: none
+    }
+
+    /* Progress bar */
+    #progress-wrap {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    #progress-bar-bg {
+      flex: 1;
+      height: 8px;
+      background: var(--bg3);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border2);
+    }
+
+    #progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue2), var(--gold));
+      width: 0%;
+      transition: width .5s;
+      border-radius: 4px;
+    }
+
+    #progress-text {
+      font-size: 11px;
+      color: var(--text2);
+      font-family: monospace;
+      white-space: nowrap
+    }
+
+    #reset-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      padding: 4px 10px;
+      font-size: 10px;
+      cursor: pointer;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: .5px;
+      transition: all .15s;
+    }
+
+    #reset-btn:hover {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    #tabs {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      overflow-x: auto;
+      flex-shrink: 0;
+      scrollbar-width: none;
+      padding: 0 8px;
+    }
+
+    #tabs::-webkit-scrollbar {
+      display: none
+    }
+
+    .tab {
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      color: var(--text3);
+      white-space: nowrap;
+      transition: all .2s;
+      flex-shrink: 0;
+    }
+
+    .tab:hover {
+      color: var(--text);
+      border-bottom-color: var(--border2)
+    }
+
+    .tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+      text-shadow: var(--glow-gold)
+    }
+
+    #main {
+      display: flex;
+      flex: 1;
+      overflow: hidden
+    }
+
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      cursor: grab
+    }
+
+    #canvas-wrap.grabbing {
+      cursor: grabbing
+    }
+
+    #canvas {
+      position: absolute;
+      transform-origin: 0 0
+    }
+
+    #svg-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      overflow: visible
+    }
+
+    /* ===== SKILL NODE STATES ===== */
+    .skill-node {
+      position: absolute;
+      width: 110px;
+      cursor: pointer;
+      transform: translate(-50%, -50%);
+      transition: all .3s;
+    }
+
+    .skill-hex {
+      width: 110px;
+      height: 96px;
+      position: relative;
+      clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+      background: var(--panel2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 14px;
+      gap: 3px;
+      text-align: center;
+      transition: all .3s;
+    }
+
+    /* LOCKED state — barely visible, can't interact */
+    .skill-node.locked .skill-hex {
+      border: 1px solid #1a1a2a;
+      opacity: 0.15;
+      filter: grayscale(100%);
+    }
+
+    .skill-node.locked {
+      pointer-events: none;
+    }
+
+    .skill-node.locked .skill-icon,
+    .skill-node.locked .skill-name,
+    .skill-node.locked .skill-year,
+    .skill-node.locked .skill-type-badge {
+      opacity: 0.3;
+    }
+
+    /* AVAILABLE state — all prereqs met, ready to unlock */
+    .skill-node.available .skill-hex {
+      border: 2px solid var(--gold);
+      animation: pulse-available 2s ease-in-out infinite;
+      background: linear-gradient(135deg, #1a1500, #0d0d1a);
+      cursor: pointer;
+    }
+
+    .skill-node.available:hover .skill-hex {
+      filter: brightness(1.4);
+      transform: scale(1.08);
+    }
+
+    .skill-node.available .skill-icon {
+      animation: icon-bounce 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-available {
+
+      0%,
+      100% {
+        box-shadow: var(--glow-available);
+      }
+
+      50% {
+        box-shadow: 0 0 20px #ffd700cc, 0 0 40px #ffd70088, 0 0 60px #ffd70044;
+      }
+    }
+
+    @keyframes icon-bounce {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-3px);
+      }
+    }
+
+    /* UNLOCKED state — fully learned */
+    .skill-node.unlocked .skill-hex {
+      border-color: var(--node-color, var(--blue));
+      box-shadow: 0 0 10px var(--node-color, var(--blue))44, 0 0 2px var(--node-color, var(--blue))88;
+      background: linear-gradient(135deg, var(--panel2), var(--bg3));
+    }
+
+    .skill-node.unlocked:hover .skill-hex {
+      filter: brightness(1.3);
+    }
+
+    .skill-node.selected .skill-hex {
+      border-color: #fff !important;
+      box-shadow: 0 0 0 2px #fff, 0 0 20px #fff8 !important;
+      transform: scale(1.08);
+    }
+
+    .skill-icon {
+      font-size: 20px;
+      line-height: 1;
+      transition: transform .3s;
+    }
+
+    .skill-name {
+      font-size: 9.5px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+      word-break: break-word
+    }
+
+    .skill-year {
+      font-size: 8px;
+      color: var(--text3);
+      font-family: monospace;
+      margin-top: 1px
+    }
+
+    .skill-type-badge {
+      font-size: 7px;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: var(--node-color, var(--blue))22;
+      color: var(--node-color, var(--blue));
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+
+    .tier-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--gold);
+      color: #000;
+      font-size: 9px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--glow-gold);
+      z-index: 2;
+    }
+
+    /* Unlock flash animation */
+    @keyframes unlock-flash {
+      0% {
+        filter: brightness(3);
+        transform: scale(1.15);
+      }
+
+      100% {
+        filter: brightness(1);
+        transform: scale(1);
+      }
+    }
+
+    .skill-node.just-unlocked .skill-hex {
+      animation: unlock-flash .6s ease-out;
+    }
+
+    /* Detail panel */
+    #detail {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: transform .3s;
+    }
+
+    #detail.hidden {
+      transform: translateX(100%);
+      width: 0;
+      border: none
+    }
+
+    #detail-header {
+      background: linear-gradient(135deg, var(--bg3), var(--panel2));
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #detail-img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      display: block;
+      background: var(--bg3);
+    }
+
+    #detail-img-placeholder {
+      width: 100%;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      background: var(--bg3);
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+
+    #detail-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 2px;
+      line-height: 1.3
+    }
+
+    #detail-subtitle {
+      font-size: 11px;
+      color: var(--text2);
+      margin-bottom: 10px
+    }
+
+    .detail-stat {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 6px;
+      align-items: center
+    }
+
+    .stat-label {
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      width: 60px;
+      flex-shrink: 0
+    }
+
+    .stat-value {
+      font-size: 11px;
+      color: var(--text);
+      font-weight: 600;
+      font-family: monospace
+    }
+
+    .stat-value.gold {
+      color: var(--gold)
+    }
+
+    .stat-value.green {
+      color: var(--green)
+    }
+
+    .stat-value.red {
+      color: var(--red)
+    }
+
+    #detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent
+    }
+
+    #detail-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text3);
+      margin: 12px 0 6px
+    }
+
+    #detail-desc {
+      font-size: 11px;
+      color: var(--text2);
+      line-height: 1.6;
+      margin-bottom: 8px
+    }
+
+    .conn-list {
+      list-style: none
+    }
+
+    .conn-item {
+      font-size: 10px;
+      color: var(--text2);
+      padding: 4px 6px;
+      margin-bottom: 2px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .conn-item:hover {
+      border-color: var(--blue);
+      color: var(--text);
+      background: var(--bg3)
+    }
+
+    .conn-arrow {
+      color: var(--text3);
+      font-size: 9px
+    }
+
+    #detail-wiki {
+      display: block;
+      margin: 10px 0 0;
+      padding: 6px 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      font-size: 10px;
+      text-decoration: none;
+      border-radius: 3px;
+      text-align: center;
+      transition: all .15s;
+    }
+
+    #detail-wiki:hover {
+      border-color: var(--blue);
+      color: var(--text)
+    }
+
+    .field-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px
+    }
+
+    .field-chip {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid;
+      letter-spacing: .3px;
+    }
+
+    #detail-close {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text2);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #detail-close:hover {
+      border-color: var(--red);
+      color: var(--red)
+    }
+
+    /* Unlock button in detail panel */
+    #unlock-btn {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background: linear-gradient(135deg, var(--gold2), var(--gold));
+      color: #000;
+      border: none;
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all .15s;
+    }
+
+    #unlock-btn:hover {
+      filter: brightness(1.2);
+      transform: scale(1.02);
+    }
+
+    #unlock-btn:disabled {
+      background: var(--bg3);
+      color: var(--text3);
+      cursor: not-allowed;
+      filter: none;
+      transform: none;
+    }
+
+    /* Prereq list in detail */
+    .prereq-item {
+      font-size: 10px;
+      padding: 4px 6px;
+      margin-bottom: 2px;
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .prereq-item.met {
+      border-color: var(--green2);
+      color: var(--green);
+    }
+
+    .prereq-item.unmet {
+      border-color: var(--red2);
+      color: var(--red);
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .prereq-item.unmet:hover {
+      border-color: var(--red);
+      color: var(--text);
+      background: var(--red2)22;
+    }
+
+    .prereq-icon {
+      font-size: 12px;
+    }
+
+    /* Minimap */
+    #minimap {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      width: 140px;
+      height: 90px;
+      background: var(--panel)cc;
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    #minimap-canvas {
+      width: 100%;
+      height: 100%
+    }
+
+    #minimap-viewport {
+      position: absolute;
+      border: 1px solid var(--gold)88;
+      background: var(--gold)11;
+      pointer-events: none;
+    }
+
+    #zoom-controls {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px
+    }
+
+    .zoom-btn {
+      width: 28px;
+      height: 28px;
+      background: var(--panel);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+
+    .zoom-btn:hover {
+      border-color: var(--gold);
+      color: var(--gold)
+    }
+
+    #loading {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      gap: 16px;
+    }
+
+    #loading-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--gold);
+      text-shadow: var(--glow-gold);
+      letter-spacing: 4px
+    }
+
+    #loading-bar-wrap {
+      width: 300px;
+      height: 6px;
+      background: var(--bg3);
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--border)
+    }
+
+    #loading-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue2), var(--blue));
+      width: 0%;
+      transition: width .3s;
+      border-radius: 3px
+    }
+
+    #loading-status {
+      font-size: 12px;
+      color: var(--text2);
+      font-family: monospace
+    }
+
+    #tooltip {
+      position: fixed;
+      pointer-events: none;
+      background: var(--panel)ee;
+      border: 1px solid var(--border2);
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      color: var(--text);
+      z-index: 100;
+      opacity: 0;
+      transition: opacity .1s;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 4px 20px #00000088;
+      max-width: 220px;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border2);
+      border-radius: 2px
+    }
+
+    #empty {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: var(--text3);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    /* Legend */
+    #legend {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: var(--panel)ee;
+      border: 1px solid var(--border2);
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 10px;
+      z-index: 5;
+    }
+
+    #legend div {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+      color: var(--text2);
+    }
+
+    #legend div:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.unlocked {
+      background: var(--blue);
+      box-shadow: 0 0 4px var(--blue);
+    }
+
+    .legend-dot.available {
+      background: var(--gold);
+      box-shadow: 0 0 4px var(--gold);
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    .legend-dot.locked {
+      background: #333;
+      opacity: 0.5;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="loading">
+    <div id="loading-title">⚔ TECH TREE ⚔</div>
+    <div id="loading-bar-wrap">
+      <div id="loading-bar"></div>
+    </div>
+    <div id="loading-status">Initializing progression system...</div>
+  </div>
+
+  <canvas id="stars" width="1920" height="1080"></canvas>
+
+  <div id="app" style="display:none">
+    <div id="header">
+      <div>
+        <h1>⚔ Human Tech Tree</h1>
+        <p id="node-count">Loading...</p>
+      </div>
+      <div class="header-spacer"></div>
+      <div id="search-wrap">
+        <span id="search-icon">⌕</span>
+        <input id="search" type="text" placeholder="Search technologies..." oninput="handleSearch(this.value)">
+      </div>
+    </div>
+
+    <div id="progress-wrap">
+      <span
+        style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700;letter-spacing:.5px;">Progress</span>
+      <div id="progress-bar-bg">
+        <div id="progress-bar"></div>
+      </div>
+      <span id="progress-text">0 / 0</span>
+      <button id="reset-btn" onclick="resetProgress()">↺ Reset</button>
+    </div>
+
+    <div id="tabs"></div>
+
+    <div id="main">
+      <div id="canvas-wrap">
+        <div id="canvas">
+          <svg id="svg-layer"></svg>
+        </div>
+        <div id="legend">
+          <div><span class="legend-dot unlocked"></span> Unlocked</div>
+          <div><span class="legend-dot available"></span> Available — click to learn</div>
+          <div><span class="legend-dot locked"></span> Locked — learn prerequisites first</div>
+        </div>
+        <div id="minimap"><canvas id="minimap-canvas" width="140" height="90"></canvas></div>
+        <div id="zoom-controls">
+          <button class="zoom-btn" onclick="zoom(1.3)">+</button>
+          <button class="zoom-btn" onclick="zoom(0.77)">−</button>
+          <button class="zoom-btn" title="Reset view" onclick="resetView()">⌖</button>
+        </div>
+        <div id="tooltip"></div>
+      </div>
+      <div id="detail" class="hidden">
+        <div style="position:relative">
+          <div id="detail-close" onclick="closeDetail()">✕</div>
+        </div>
+        <div id="detail-header"></div>
+        <div id="detail-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== EMBEDDED DATA (same as original) =====
+    const RAW_DATA = null; // Will be loaded from techtree-data.json
+
+    // ===== CONFIG =====
+    const FIELD_COLORS = {
+      Agriculture: '#4caf50', Astronomy: '#7c4dff', Biology: '#00e676', Chemistry: '#aa00ff',
+      Commerce: '#1de9b6', Communication: '#ff6d00', Computing: '#2979ff', Construction: '#ff6f00',
+      Diving: '#00b0ff', Electricity: '#ffea00', Electronics: '#64ffda', Energy: '#ff9100',
+      Flying: '#40c4ff', Food: '#69f0ae', Geography: '#18ffff', Hydraulics: '#00b8d4',
+      Lighting: '#ffe57f', Manufacturing: '#ff6e40', Mathematics: '#ea80fc', Measurement: '#90a4ae',
+      Medicine: '#00e5ff', Metallurgy: '#bdbdbd', Meteorology: '#4fc3f7', Mining: '#d4a017',
+      Misc: '#757575', Music: '#f48fb1', Optics: '#b39ddb', Physics: '#ce93d8',
+      Recreation: '#ff80ab', Safety: '#ff6b6b', Sailing: '#1e88e5', Sanitation: '#26c6da',
+      Security: '#ef5350', Space: '#651fff', Textiles: '#a1887f', Timekeeping: '#78909c',
+      Transportation: '#ff7043', 'Visual media': '#e040fb', Weaponry: '#f44336',
+    };
+    const TYPE_ICONS = {
+      Tool: '⚙', Technique: '📐', Part: '🔩', Discovery: '💡', Consumable: '🧪',
+      Material: '🪨', Weapon: '⚔', Standard: '📋', Infrastructure: '🏗', Domestication: '🌾',
+      Default: '◆'
+    };
+    const YEAR_TO_ERA = y => {
+      if (y < -3000) return 'Prehistoric';
+      if (y < 0) return 'Ancient';
+      if (y < 500) return 'Classical';
+      if (y < 1400) return 'Medieval';
+      if (y < 1700) return 'Renaissance';
+      if (y < 1850) return 'Industrial';
+      if (y < 1950) return 'Modern';
+      if (y < 2000) return 'Digital Age';
+      return 'Information Age';
+    };
+
+    // ===== STATE =====
+    let allNodes = [], allLinks = [], nodeMap = {};
+    let incomingLinks = {}, outgoingLinks = {};
+    let unlockedSet = new Set(); // IDs of unlocked techs
+    let currentField = 'All';
+    let transform = { x: 0, y: 0, scale: 1 };
+    let dragging = false, dragStart = { x: 0, y: 0 }, transformStart = { x: 0, y: 0 };
+    let selectedId = null;
+    let searchQuery = '';
+    let canvasW = 0, canvasH = 0;
+    let layoutNodes = [], layoutLinks = [];
+
+    // ===== PROGRESSION LOGIC =====
+    function isAvailable(nodeId) {
+      // Available if all prerequisites (incoming links) are unlocked
+      const prereqs = incomingLinks[nodeId] || [];
+      if (prereqs.length === 0) return true; // Root node, always available
+      return prereqs.every(srcId => unlockedSet.has(srcId));
+    }
+
+    function isUnlocked(nodeId) {
+      return unlockedSet.has(nodeId);
+    }
+
+    function getNodeState(nodeId) {
+      if (isUnlocked(nodeId)) return 'unlocked';
+      if (isAvailable(nodeId)) return 'available';
+      return 'locked';
+    }
+
+    function unlockNode(nodeId) {
+      if (!isAvailable(nodeId)) return;
+      unlockedSet.add(nodeId);
+      saveProgress();
+      updateProgressUI();
+      renderCanvas();
+      // Flash animation
+      const el = document.querySelector(`.skill-node[data-id="${nodeId}"]`);
+      if (el) {
+        el.classList.add('just-unlocked');
+        setTimeout(() => el.classList.remove('just-unlocked'), 700);
+      }
+      // Auto-select the newly unlocked node
+      selectNode(nodeId);
+    }
+
+    function getMissingPrereqs(nodeId) {
+      const prereqs = incomingLinks[nodeId] || [];
+      return prereqs.filter(id => !unlockedSet.has(id));
+    }
+
+    // ===== LOCAL STORAGE =====
+    const STORAGE_KEY = 'techtree_progress_v2';
+
+    function saveProgress() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify([...unlockedSet]));
+      } catch (e) { }
+    }
+
+    function loadProgress() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        if (data) {
+          const arr = JSON.parse(data);
+          unlockedSet = new Set(arr.filter(id => nodeMap[id])); // Filter out deleted nodes
+        }
+      } catch (e) {
+        unlockedSet = new Set();
+      }
+    }
+
+    function resetProgress() {
+      if (!confirm('Reset all progress? This will unlock all root technologies again.')) return;
+      unlockedSet = new Set();
+      saveProgress();
+      closeDetail();
+      updateProgressUI();
+      filterAndLayout();
+    }
+
+    // ===== INIT =====
+    async function init() {
+      drawStars();
+      setProgress(10, 'Loading tech data...');
+
+      try {
+        const resp = await fetch('techtree-data.json');
+        const data = await resp.json();
+        allNodes = data.nodes;
+        allLinks = data.links.map(l => ({ s: l.source, t: l.target, lt: l.type || 'Dependency' }));
+      } catch (e) {
+        // Fallback: try embedded data if fetch fails
+        if (window.RAW_DATA_EMBEDDED) {
+          allNodes = RAW_DATA_EMBEDDED.nodes;
+          allLinks = RAW_DATA_EMBEDDED.links;
+        } else {
+          document.getElementById('loading-status').textContent = 'Error: Could not load techtree-data.json';
+          return;
+        }
+      }
+
+      allNodes.forEach(n => nodeMap[n.id] = n);
+
+      // Build adjacency maps
+      allNodes.forEach(n => { incomingLinks[n.id] = []; outgoingLinks[n.id] = []; });
+      allLinks.forEach(l => {
+        if (incomingLinks[l.t]) incomingLinks[l.t].push(l.s);
+        if (outgoingLinks[l.s]) outgoingLinks[l.s].push(l.t);
+      });
+
+      setProgress(30, 'Loading saved progress...');
+      loadProgress();
+
+      // Auto-unlock root nodes (no prerequisites) if none are unlocked
+      if (unlockedSet.size === 0) {
+        allNodes.forEach(n => {
+          if ((incomingLinks[n.id] || []).length === 0) {
+            // Don't auto-unlock root nodes — let player discover them
+            // Actually, let's make them available but not unlocked
+          }
+        });
+      }
+
+      setProgress(60, 'Building categories...');
+      setTimeout(() => {
+        buildTabs();
+        setProgress(80, 'Calculating progression...');
+        setTimeout(() => {
+          updateProgressUI();
+          switchField('All');
+          setProgress(100, 'Ready!');
+          setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            setupInteraction();
+            drawMinimap();
+          }, 300);
+        }, 100);
+      }, 100);
+    }
+
+    function setProgress(pct, msg) {
+      document.getElementById('loading-bar').style.width = pct + '%';
+      document.getElementById('loading-status').textContent = msg;
+    }
+
+    function updateProgressUI() {
+      const total = allNodes.length;
+      const done = unlockedSet.size;
+      const pct = total > 0 ? (done / total * 100).toFixed(1) : 0;
+      document.getElementById('progress-bar').style.width = pct + '%';
+      document.getElementById('progress-text').textContent = `${done.toLocaleString()} / ${total.toLocaleString()} (${pct}%)`;
+      document.getElementById('node-count').textContent =
+        `${done.toLocaleString()} of ${total.toLocaleString()} technologies unlocked`;
+    }
+
+    // ===== STARS =====
+    function drawStars() {
+      const c = document.getElementById('stars');
+      const ctx = c.getContext('2d');
+      c.width = window.innerWidth; c.height = window.innerHeight;
+      for (let i = 0; i < 300; i++) {
+        const x = Math.random() * c.width, y = Math.random() * c.height, r = Math.random() * 1.2;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${0.1 + Math.random() * 0.4})`; ctx.fill();
+      }
+    }
+
+    // ===== TABS =====
+    function buildTabs() {
+      const fieldCounts = {};
+      allNodes.forEach(n => (n.fields || []).forEach(f => fieldCounts[f] = (fieldCounts[f] || 0) + 1));
+      const fields = Object.entries(fieldCounts).sort((a, b) => b[1] - a[1]).map(e => e[0]);
+      const tabs = document.getElementById('tabs');
+      tabs.innerHTML = `<div class="tab active" data-field="All" onclick="switchField('All')">⬡ All (${allNodes.length})</div>`
+        + fields.map(f => `<div class="tab" data-field="${f}" onclick="switchField('${f.replace(/'/g, "'\\''")}')">
+      <span style="color:${FIELD_COLORS[f] || '#888'}">◆</span> ${f} <span style="color:var(--text3)">(${fieldCounts[f]})</span>
+    </div>`).join('');
+    }
+
+    function switchField(field) {
+      currentField = field;
+      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.field === field));
+      closeDetail();
+      filterAndLayout();
+    }
+
+    function filterAndLayout() {
+      let nodes = allNodes;
+      if (currentField !== 'All') nodes = nodes.filter(n => (n.fields || []).includes(currentField));
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        nodes = nodes.filter(n =>
+          n.title.toLowerCase().includes(q) || (n.subtitle || '').toLowerCase().includes(q)
+        );
+      }
+      layoutGraph(nodes);
+    }
+
+    // ===== LAYOUT (same era-column approach) =====
+    function layoutGraph(nodes) {
+      if (!nodes.length) { renderEmpty(); return; }
+
+      const nodeIds = new Set(nodes.map(n => n.id));
+      const relevantLinks = allLinks.filter(l => nodeIds.has(l.s) && nodeIds.has(l.t));
+
+      const ERA_BREAKS = [-10000, -3000, 0, 500, 1400, 1700, 1850, 1950, 2000, 2030];
+      const cols = Array.from({ length: ERA_BREAKS.length - 1 }, () => []);
+      const sorted = [...nodes].sort((a, b) => (a.year || 0) - (b.year || 0));
+      sorted.forEach(n => {
+        const y = n.year || 0;
+        let ci = ERA_BREAKS.findIndex((b, i) => y >= ERA_BREAKS[i] && y < ERA_BREAKS[i + 1]);
+        if (ci < 0) ci = ERA_BREAKS.length - 2;
+        cols[ci].push(n);
+      });
+
+      const NODEw = 130, NODEh = 110, COLw = 160, PAD = 40;
+      const positions = {};
+      let x = PAD;
+
+      cols.forEach(col => {
+        if (!col.length) return;
+        let y = PAD;
+        col.forEach((n, i) => {
+          const xOff = (i % 2 === 0) ? 0 : COLw * 0.3;
+          positions[n.id] = { x: x + xOff, y: y + i * NODEh * 0.9 };
+        });
+        x += COLw + (col.length > 8 ? 60 : 0);
+      });
+
+      // Spring repulsion
+      for (let iter = 0; iter < 3; iter++) {
+        nodes.forEach(n => {
+          const p = positions[n.id]; if (!p) return;
+          nodes.forEach(m => {
+            if (m.id === n.id) return;
+            const q = positions[m.id]; if (!q) return;
+            const dx = p.x - q.x, dy = p.y - q.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < NODEw * 0.9 && dist > 0) {
+              const force = (NODEw * 0.9 - dist) / dist * 0.3;
+              p.x += dx * force; p.y += dy * force;
+            }
+          });
+        });
+      }
+
+      layoutNodes = nodes.map(n => ({ ...n, px: positions[n.id]?.x || 0, py: positions[n.id]?.y || 0 }));
+      layoutLinks = relevantLinks;
+      canvasW = Math.max(...Object.values(positions).map(p => p.x)) + NODEw + PAD * 2;
+      canvasH = Math.max(...Object.values(positions).map(p => p.y)) + NODEh + PAD * 2;
+
+      renderCanvas();
+      resetView();
+    }
+
+    function renderEmpty() {
+      const canvas = document.getElementById('canvas');
+      canvas.querySelectorAll('.skill-node').forEach(el => el.remove());
+      document.getElementById('svg-layer').innerHTML = '';
+      canvas.style.width = '800px'; canvas.style.height = '400px';
+    }
+
+    // ===== RENDER =====
+    function renderCanvas() {
+      const canvas = document.getElementById('canvas');
+      const svg = document.getElementById('svg-layer');
+      svg.setAttribute('width', canvasW);
+      svg.setAttribute('height', canvasH);
+
+      const posMap = {};
+      layoutNodes.forEach(n => posMap[n.id] = { x: n.px, y: n.py });
+
+      // SVG connections — color based on source/target state
+      let svgHtml = `<defs>
+    <marker id="arr-locked" viewBox="0 0 10 6" refX="9" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#1a1a2a"/>
+    </marker>
+    <marker id="arr-available" viewBox="0 0 10 6" refX="9" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#ffd70088"/>
+    </marker>
+    <marker id="arr-unlocked" viewBox="0 0 10 6" refX="9" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#4488ff"/>
+    </marker>
+  </defs>`;
+
+      layoutLinks.forEach(l => {
+        const src = posMap[l.s], tgt = posMap[l.t];
+        if (!src || !tgt) return;
+        const x1 = src.x, y1 = src.y, x2 = tgt.x, y2 = tgt.y;
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+
+        const srcState = getNodeState(l.s);
+        const tgtState = getNodeState(l.t);
+
+        let color = '#1a1a2a', opacity = '0.3', marker = 'arr-locked';
+        if (tgtState === 'unlocked') {
+          color = '#2a3a6a'; opacity = '0.6'; marker = 'arr-unlocked';
+        } else if (tgtState === 'available') {
+          color = '#3a3a2a'; opacity = '0.5'; marker = 'arr-available';
+        }
+
+        svgHtml += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}"
+      fill="none" stroke="${color}" stroke-width="1.2" opacity="${opacity}"
+      marker-end="url(#${marker})" data-src="${l.s}" data-tgt="${l.t}"/>`;
+      });
+      svg.innerHTML = svgHtml;
+
+      // Nodes
+      canvas.querySelectorAll('.skill-node').forEach(el => el.remove());
+      canvas.style.width = canvasW + 'px'; canvas.style.height = canvasH + 'px';
+
+      const frag = document.createDocumentFragment();
+      layoutNodes.forEach(n => {
+        const state = getNodeState(n.id);
+        const color = (n.fields || []).reduce((c, f) => FIELD_COLORS[f] || c, '#4488ff');
+        const icon = TYPE_ICONS[n.type] || TYPE_ICONS.Default;
+        const yearStr = n.year ? (n.year < 0 ? Math.abs(n.year) + ' BCE' : n.year + ' CE') : '?';
+        const isSelected = n.id === selectedId;
+
+        const div = document.createElement('div');
+        div.className = `skill-node ${state}${isSelected ? ' selected' : ''}`;
+        div.style.cssText = `left:${n.px}px;top:${n.py}px;--node-color:${color}`;
+        div.dataset.id = n.id;
+
+        if (state === 'available') {
+          div.onclick = () => unlockNode(n.id);
+          div.onmouseenter = (e) => showTooltip(e, n.id, state);
+        } else if (state === 'unlocked') {
+          div.onclick = () => selectNode(n.id);
+          div.onmouseenter = (e) => showTooltip(e, n.id, state);
+        } else {
+          div.onmouseenter = (e) => showTooltip(e, n.id, state);
+        }
+        div.onmouseleave = hideTooltip;
+
+        div.innerHTML = `
+      ${n.tier === 'S' ? '<div class="tier-badge">S</div>' : ''}
+      <div class="skill-hex">
+        <div class="skill-icon">${icon}</div>
+        <div class="skill-name">${escHtml(n.title)}</div>
+        <div class="skill-year">${yearStr}</div>
+        <div class="skill-type-badge">${n.type || 'Tech'}</div>
+      </div>
+    `;
+
+        frag.appendChild(div);
+      });
+      canvas.appendChild(frag);
+      drawMinimap();
+    }
+
+    function escHtml(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    // ===== DETAIL PANEL =====
+    function selectNode(id) {
+      selectedId = id;
+      document.querySelectorAll('.skill-node').forEach(el => el.classList.toggle('selected', el.dataset.id === id));
+      showDetail(id);
+
+      // Highlight connections
+      const svgPaths = document.querySelectorAll('#svg-layer path[data-src]');
+      svgPaths.forEach(p => {
+        const s = p.dataset.src, t = p.dataset.tgt;
+        if (s === id || t === id) {
+          p.setAttribute('stroke', '#ffd700');
+          p.setAttribute('stroke-width', '2');
+          p.setAttribute('opacity', '1');
+        } else {
+          p.setAttribute('opacity', '0.15');
+        }
+      });
+    }
+
+    // Navigate camera to a node and open its detail
+    function navigateToNode(id) {
+      const node = nodeMap[id];
+      if (!node) return;
+      // Find the node in layout
+      const layoutNode = layoutNodes.find(n => n.id === id);
+      if (!layoutNode) return;
+
+      const wrap = document.getElementById('canvas-wrap');
+      const rect = wrap.getBoundingClientRect();
+      // Center the camera on this node
+      transform.x = rect.width / 2 - layoutNode.px * transform.scale;
+      transform.y = rect.height / 2 - layoutNode.py * transform.scale;
+      applyTransform();
+      drawMinimap();
+
+      // Brief delay for camera to settle, then select
+      setTimeout(() => selectNode(id), 200);
+    }
+
+    function showDetail(id) {
+      const node = nodeMap[id];
+      if (!node) return;
+      const detail = document.getElementById('detail');
+      detail.classList.remove('hidden');
+
+      const color = (node.fields || []).reduce((c, f) => FIELD_COLORS[f] || c, '#4488ff');
+      const icon = TYPE_ICONS[node.type] || TYPE_ICONS.Default;
+      const yearStr = node.year ? (node.year < 0 ? Math.abs(node.year) + ' BCE' : node.year + ' CE') : 'Unknown';
+      const era = YEAR_TO_ERA(node.year || 0);
+      const state = getNodeState(id);
+      const missingPrereqs = getMissingPrereqs(id);
+      const prereqNodes = (incomingLinks[id] || []).map(pid => nodeMap[pid]).filter(Boolean);
+      const successorNodes = (outgoingLinks[id] || []).map(tid => nodeMap[tid]).filter(Boolean);
+
+      const fieldChips = (node.fields || []).map(f =>
+        `<span class="field-chip" style="color:${FIELD_COLORS[f] || '#888'};border-color:${FIELD_COLORS[f] || '#888'}44;background:${FIELD_COLORS[f] || '#888'}11">${f}</span>`
+      ).join('');
+
+      // Unlock button or status
+      let actionHtml = '';
+      if (state === 'unlocked') {
+        actionHtml = `<div style="text-align:center;padding:8px;margin:8px 0;border:1px solid var(--green2);border-radius:4px;background:var(--green2)11;">
+      <span style="color:var(--green);font-size:12px;font-weight:700;">✓ UNLOCKED</span>
+    </div>`;
+      } else if (state === 'available') {
+        actionHtml = `<button id="unlock-btn" onclick="unlockNode('${id}')">⚡ UNLOCK THIS TECHNOLOGY</button>`;
+      } else {
+        actionHtml = `<div style="text-align:center;padding:8px;margin:8px 0;border:1px solid var(--red2);border-radius:4px;background:var(--red2)11;">
+      <span style="color:var(--red);font-size:11px;font-weight:700;">🔒 LOCKED — Complete prerequisites below</span>
+    </div>`;
+      }
+
+      // Prerequisites list
+      const prereqHtml = prereqNodes.length ?
+        `<div id="detail-section-title">Prerequisites (${prereqNodes.length})</div>
+    <div class="prereq-list">${prereqNodes.map(p => {
+          const met = unlockedSet.has(p.id);
+          return `<div class="prereq-item ${met ? 'met' : 'unmet'}" ${met ? '' : `onclick="navigateToNode('${p.id}')"`}>
+        <span class="prereq-icon">${met ? '✓' : '○'}</span>
+        <span>${escHtml(p.title)}</span>
+      </div>`;
+        }).join('')}</div>`
+        : `<div id="detail-section-title">Prerequisites</div>
+       <div style="color:var(--green);font-size:10px;padding:4px">✦ Root technology — no prerequisites</div>`;
+
+      // Successors list
+      const successorHtml = successorNodes.length ?
+        `<div id="detail-section-title">Unlocks (${successorNodes.length})</div>
+    <ul class="conn-list">${successorNodes.map(s => {
+          const sState = getNodeState(s.id);
+          return `<li class="conn-item" onclick="selectNode('${s.id}')">
+        <span class="conn-arrow">▶</span>
+        ${escHtml(s.title)}
+        ${sState === 'unlocked' ? '<span style="color:var(--green);font-size:8px">✓</span>' : ''}
+        ${sState === 'available' ? '<span style="color:var(--gold);font-size:8px">⚡</span>' : ''}
+      </li>`;
+        }).join('')}</ul>`
+        : '<div style="color:var(--text3);font-size:10px;padding:4px">Terminal technology</div>';
+
+      const invHtml = node.inventors?.length ?
+        `<div id="detail-section-title">Inventors</div><div id="detail-desc">${node.inventors.join(', ')}</div>` : '';
+
+      document.getElementById('detail-header').innerHTML = `
+    ${node.image
+          ? `<img id="detail-img" src="${escHtml(node.image)}" onerror="this.style.display='none';document.getElementById('detail-img-placeholder').style.display='flex'" alt="">`
+          : ''}
+    <div id="detail-img-placeholder" style="display:${node.image ? 'none' : 'flex'}">${icon}</div>
+    <div id="detail-title">${escHtml(node.title)}</div>
+    ${node.subtitle ? `<div id="detail-subtitle">${escHtml(node.subtitle)}</div>` : ''}
+    <div class="detail-stat"><span class="stat-label">Year</span><span class="stat-value gold">${yearStr}</span></div>
+    <div class="detail-stat"><span class="stat-label">Era</span><span class="stat-value">${era}</span></div>
+    <div class="detail-stat"><span class="stat-label">Type</span><span class="stat-value">${node.type || '—'}</span></div>
+    <div class="detail-stat"><span class="stat-label">Status</span><span class="stat-value ${state === 'unlocked' ? 'green' : state === 'available' ? 'gold' : 'red'}">${state.toUpperCase()}</span></div>
+    <div class="detail-stat" style="align-items:flex-start"><span class="stat-label">Fields</span><div class="field-chips">${fieldChips}</div></div>
+  `;
+
+      document.getElementById('detail-body').innerHTML = `
+    ${actionHtml}
+    ${node.details ? `<div id="detail-section-title">About</div><div id="detail-desc">${escHtml(node.details)}</div>` : ''}
+    ${invHtml}
+    ${prereqHtml}
+    ${successorHtml}
+    ${node.wikipedia ? `<a id="detail-wiki" href="${escHtml(node.wikipedia)}" target="_blank" rel="noopener">📖 View on Wikipedia →</a>` : ''}
+  `;
+    }
+
+    function closeDetail() {
+      document.getElementById('detail').classList.add('hidden');
+      selectedId = null;
+      document.querySelectorAll('.skill-node').forEach(el => el.classList.remove('selected'));
+    }
+
+    // ===== TOOLTIP =====
+    let tooltipTimer;
+    function showTooltip(e, id, state) {
+      clearTimeout(tooltipTimer);
+      const node = nodeMap[id];
+      if (!node) return;
+      const tt = document.getElementById('tooltip');
+      const yearStr = node.year ? (node.year < 0 ? Math.abs(node.year) + ' BCE' : node.year + ' CE') : '?';
+
+      let statusStr = '';
+      if (state === 'unlocked') statusStr = '<br><span style="color:var(--green)">✓ Unlocked</span>';
+      else if (state === 'available') statusStr = '<br><span style="color:var(--gold)">⚡ Click to unlock!</span>';
+      else {
+        const missing = getMissingPrereqs(id);
+        statusStr = `<br><span style="color:var(--red)">🔒 ${missing.length} prerequisite${missing.length > 1 ? 's' : ''} remaining</span>`;
+      }
+
+      tt.innerHTML = `<strong>${escHtml(node.title)}</strong><br><span style="color:var(--text3)">${yearStr} · ${node.type || 'Tech'}</span>${statusStr}`;
+      tt.style.left = (e.clientX + 12) + 'px';
+      tt.style.top = (e.clientY - 8) + 'px';
+      tt.style.opacity = '1';
+    }
+    function hideTooltip() {
+      document.getElementById('tooltip').style.opacity = '0';
+    }
+
+    // ===== SEARCH =====
+    let searchTimer;
+    function handleSearch(q) {
+      clearTimeout(searchTimer);
+      searchQuery = q;
+      searchTimer = setTimeout(() => filterAndLayout(), 200);
+    }
+
+    // ===== INTERACTION =====
+    function setupInteraction() {
+      const wrap = document.getElementById('canvas-wrap');
+      wrap.addEventListener('mousedown', e => {
+        if (e.target.closest('.skill-node')) return;
+        dragging = true;
+        dragStart = { x: e.clientX, y: e.clientY };
+        transformStart = { x: transform.x, y: transform.y };
+        wrap.classList.add('grabbing');
+        e.preventDefault();
+      });
+      window.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        transform.x = transformStart.x + (e.clientX - dragStart.x);
+        transform.y = transformStart.y + (e.clientY - dragStart.y);
+        applyTransform(); drawMinimap();
+      });
+      window.addEventListener('mouseup', () => {
+        dragging = false;
+        document.getElementById('canvas-wrap').classList.remove('grabbing');
+      });
+      wrap.addEventListener('wheel', e => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const rect = wrap.getBoundingClientRect();
+        const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+        transform.x = cx - (cx - transform.x) * delta;
+        transform.y = cy - (cy - transform.y) * delta;
+        transform.scale = Math.max(0.1, Math.min(4, transform.scale * delta));
+        applyTransform(); drawMinimap();
+      }, { passive: false });
+
+      // Touch
+      wrap.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+          dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+          transformStart = { x: transform.x, y: transform.y };
+        }
+      });
+      wrap.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1) {
+          const dx = e.touches[0].clientX - dragStart.x;
+          const dy = e.touches[0].clientY - dragStart.y;
+          transform.x = transformStart.x + dx;
+          transform.y = transformStart.y + dy;
+          applyTransform();
+        }
+      }, { passive: false });
+    }
+
+    function applyTransform() {
+      document.getElementById('canvas').style.transform =
+        `translate(${transform.x}px,${transform.y}px) scale(${transform.scale})`;
+    }
+
+    function zoom(factor) {
+      const wrap = document.getElementById('canvas-wrap');
+      const rect = wrap.getBoundingClientRect();
+      const cx = rect.width / 2, cy = rect.height / 2;
+      transform.x = cx - (cx - transform.x) * factor;
+      transform.y = cy - (cy - transform.y) * factor;
+      transform.scale = Math.max(0.1, Math.min(4, transform.scale * factor));
+      applyTransform(); drawMinimap();
+    }
+
+    function resetView() {
+      const wrap = document.getElementById('canvas-wrap');
+      const rect = wrap.getBoundingClientRect();
+      const sx = rect.width / canvasW, sy = rect.height / canvasH;
+      transform.scale = Math.min(sx, sy, 1) * 0.9;
+      transform.x = (rect.width - canvasW * transform.scale) / 2;
+      transform.y = (rect.height - canvasH * transform.scale) / 2;
+      applyTransform(); drawMinimap();
+    }
+
+    // ===== MINIMAP =====
+    function drawMinimap() {
+      const mc = document.getElementById('minimap-canvas');
+      const ctx = mc.getContext('2d');
+      ctx.clearRect(0, 0, mc.width, mc.height);
+      if (!layoutNodes.length) return;
+
+      const sx = mc.width / canvasW, sy = mc.height / canvasH;
+      const s = Math.min(sx, sy);
+
+      layoutNodes.forEach(n => {
+        const state = getNodeState(n.id);
+        const color = (n.fields || []).reduce((c, f) => FIELD_COLORS[f] || c, '#4488ff');
+        if (state === 'locked') {
+          ctx.fillStyle = '#33333344';
+        } else if (state === 'available') {
+          ctx.fillStyle = '#ffd70088';
+        } else {
+          ctx.fillStyle = color + '88';
+        }
+        ctx.fillRect(n.px * s, n.py * s, 3, 2);
+      });
+
+      const wrap = document.getElementById('canvas-wrap');
+      const rect = wrap.getBoundingClientRect();
+      const vx = -transform.x / transform.scale * s;
+      const vy = -transform.y / transform.scale * s;
+      const vw = (rect.width / transform.scale) * s;
+      const vh = (rect.height / transform.scale) * s;
+      ctx.strokeStyle = '#ffd70088';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(vx, vy, vw, vh);
+    }
+
+    // ===== START =====
+    init();
+  </script>
+</body>
+
+</html>
